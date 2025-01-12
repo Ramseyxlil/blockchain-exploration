@@ -1,0 +1,235 @@
+<!DOCTYPE html>  
+<html lang="en">  
+<head>  
+    <meta charset="UTF-8">  
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">  
+    <title>Blockchain Frontend</title>  
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">  
+    <style>  
+        body {  
+            font-family: Arial, sans-serif;  
+            margin: 0;  
+            padding: 0;  
+            background-color: #f4f4f4;  
+        }  
+        header {  
+            background: #333;  
+            color: #fff;  
+            padding: 10px 20px;  
+            text-align: center;  
+        }  
+        .container {  
+            margin: 20px auto;  
+            max-width: 90%;  
+            padding: 20px;  
+            background: #fff;  
+            border-radius: 8px;  
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);  
+        }  
+        h2 {  
+            color: #333;  
+        }  
+        .form-group {  
+            margin-bottom: 15px;  
+        }  
+        .form-group label {  
+            display: block;  
+            margin-bottom: 5px;  
+        }  
+        .form-group input {  
+            width: 100%;  
+            padding: 8px;  
+            box-sizing: border-box;  
+            border: 1px solid #ccc;  
+            border-radius: 4px;  
+        }  
+        button {  
+            padding: 10px 20px;  
+            color: #fff;  
+            background: #333;  
+            border: none;  
+            border-radius: 4px;  
+            cursor: pointer;  
+        }  
+        button:hover {  
+            background: #555;  
+        }  
+        table {  
+            width: 100%;  
+            max-width: 800px;  
+            margin-top: 20px;  
+            border-collapse: collapse;  
+            margin: auto;  
+        }  
+        table, th, td {  
+            border: 1px solid #ddd;  
+        }  
+        th, td {  
+            padding: 10px;  
+            text-align: left;  
+            word-wrap: break-word;  
+        }  
+        th {  
+            background: #333;  
+            color: #fff;  
+        }  
+        td, th {  
+            max-width: 150px;  
+            overflow: hidden;  
+            text-overflow: ellipsis;  
+        }  
+    </style>  
+</head>  
+<body>  
+    <header>  
+        <h1>Blockchain Explorer</h1>  
+    </header>  
+    <div class="container">  
+        <h2>Create Transaction</h2>  
+        <div class="form-group">  
+            <label for="amount">Amount</label>  
+            <input type="number" id="amount" placeholder="Enter amount">  
+        </div>  
+        <div class="form-group">  
+            <label for="sender">Sender</label>  
+            <input type="text" id="sender" placeholder="Enter sender address">  
+        </div>  
+        <div class="form-group">  
+            <label for="recipient">Recipient</label>  
+            <input type="text" id="recipient" placeholder="Enter recipient address">  
+        </div>  
+        <button id="createTransaction"><i class="fas fa-plus-circle"></i> Create Transaction</button>  
+          
+        <h2>Blockchain</h2>  
+        <button id="viewBlockchain"><i class="fas fa-eye"></i> View Blockchain</button>  
+        <table id="blockchainTable" style="display: none;">  
+            <thead>  
+                <tr>  
+                    <th>Index</th>  
+                    <th>Timestamp</th>  
+                    <th>Amount</th>  
+                    <th>Sender</th>  
+                    <th>Recipient</th>  
+                    <th>Nonce</th>  
+                    <th>Hash</th>  
+                    <th>Previous Hash</th>  
+                </tr>  
+            </thead>  
+            <tbody></tbody>  
+        </table>  
+  
+        <h2>Mine Block</h2>  
+        <button id="mineBlock"><i class="fas fa-hammer"></i> Mine Block</button>  
+        <div id="minedBlock" style="display: none;"></div>  
+    </div>  
+    <script>  
+        const apiUrl = 'http://localhost:3001';  
+  
+        // Create Transaction  
+        document.getElementById('createTransaction').addEventListener('click', () => {  
+            const amount = document.getElementById('amount').value;  
+            const sender = document.getElementById('sender').value;  
+            const recipient = document.getElementById('recipient').value;  
+  
+            if (!amount || !sender || !recipient) {  
+                alert('Please fill all fields');  
+                return;  
+            }  
+  
+            fetch(`${apiUrl}/transaction`, {  
+                method: 'POST',  
+                headers: { 'Content-Type': 'application/json' },  
+                body: JSON.stringify({ amount, sender, recipient })  
+            })  
+            .then(response => {  
+                if (!response.ok) {  
+                    throw new Error('Network response was not ok');  
+                }  
+                return response.json();  
+            })  
+            .then(data => {  
+                console.log('Transaction data:', data);  
+                alert(data.note || 'Transaction added successfully');  
+            })  
+            .catch(err => {  
+                console.error('Error:', err);  
+                alert(`Error: ${err.message}`);  
+            });  
+        });  
+  
+        // View Blockchain  
+        document.getElementById('viewBlockchain').addEventListener('click', () => {  
+            console.log('View Blockchain button clicked');  
+            fetch(`${apiUrl}/blockchain`)  
+                .then(response => {  
+                    if (!response.ok) {  
+                        throw new Error('Network response was not ok');  
+                    }  
+                    return response.json();  
+                })  
+                .then(data => {  
+                    console.log('Blockchain data:', data);  
+                    const table = document.getElementById('blockchainTable');  
+                    const tbody = table.querySelector('tbody');  
+                    tbody.innerHTML = ''; // Clear existing rows  
+                    data.chain.forEach(block => {  
+                        const transactions = block.transactions && block.transactions.length > 0  
+                            ? block.transactions.map(tx => `  
+                                <tr>  
+                                    <td>${block.index}</td>  
+                                    <td>${new Date(block.timestamp).toLocaleString()}</td>  
+                                    <td>${tx.amount || 'undefined'}</td>  
+                                    <td>${tx.sender || 'undefined'}</td>  
+                                    <td>${tx.recipient || 'undefined'}</td>  
+                                    <td>${block.nonce}</td>  
+                                    <td>${block.hash}</td>  
+                                    <td>${block.previousBlockHash}</td>  
+                                </tr>  
+                            `).join('')  
+                            : `<tr><td colspan="8">No transactions</td></tr>`;  
+                        tbody.innerHTML += transactions;  
+                    });  
+                    table.style.display = 'table';  
+                })  
+                .catch(err => {  
+                    console.error('Error:', err);  
+                    alert(`Error: ${err.message}`);  
+                });  
+        });  
+  
+        // Mine Block  
+        document.getElementById('mineBlock').addEventListener('click', () => {  
+            fetch(`${apiUrl}/mine`)  
+                .then(response => {  
+                    if (!response.ok) {  
+                        throw new Error('Network response was not ok');  
+                    }  
+                    return response.json();  
+                })  
+                .then(data => {  
+                    console.log('Mined block data:', data);  
+                    const minedBlockDiv = document.getElementById('minedBlock');  
+                    const transactions = data.block.transactions && data.block.transactions.length > 0  
+                        ? data.block.transactions.map(tx => `  
+                            <li class="subcells">Amount: ${tx.amount || 'undefined'}, Sender: ${tx.sender || 'undefined'}, Recipient: ${tx.recipient || 'undefined'}</li>  
+                        `).join('')  
+                        : '<li class="subcells">No transactions</li>';  
+                    minedBlockDiv.innerHTML = `  
+                        <h3>${data.note}</h3>  
+                        <p><strong>Index:</strong> ${data.block.index}</p>  
+                        <p><strong>Timestamp:</strong> ${new Date(data.block.timestamp).toLocaleString()}</p>  
+                        <p><strong>Transactions:</strong> <ul class="transactions">${transactions}</ul></p>  
+                        <p><strong>Nonce:</strong> ${data.block.nonce}</p>  
+                        <p><strong>Hash:</strong> ${data.block.hash}</p>  
+                        <p><strong>Previous Hash:</strong> ${data.block.previousBlockHash}</p>  
+                    `;  
+                    minedBlockDiv.style.display = 'block';  
+                })  
+                .catch(err => {  
+                    console.error('Error:', err);  
+                    alert(`Error: ${err.message}`);  
+                });  
+        });  
+    </script>  
+</body>  
+</html>
