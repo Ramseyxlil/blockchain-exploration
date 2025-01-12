@@ -1,5 +1,7 @@
 # Blockchain Exploration
 
+![Project Preview](./preview.png)
+
 Welcome to the Blockchain Exploration project! This repository provides a foundational implementation of a blockchain concept, including a frontend interface and a backend server.
 
 ## Getting Started
